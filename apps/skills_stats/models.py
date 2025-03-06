@@ -36,3 +36,18 @@ class VacancyKeywords(models.Model):
     class Meta:
         verbose_name = 'Ключевой навык'
         verbose_name_plural = 'Ключевые навыки'
+
+class Vacancy(models.Model):
+    """Модель собранных вакансий"""
+    vacancy_id = models.IntegerField()
+    title = models.CharField(max_length=100)
+    key_skills = models.ManyToManyField(VacancyKeywords)
+    published_at = models.DateField()
+    json_data = models.JSONField()
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Вакансия'
+        verbose_name_plural = 'Вакансии'
