@@ -1,7 +1,7 @@
 from celery import shared_task
 
-from api.services.hh_parser import fetch_vacancies
-from models import Profession
+from skills_stats.api.services.hh_parser import fetch_vacancies
+from skills_stats.models import Profession
 
 
 @shared_task
