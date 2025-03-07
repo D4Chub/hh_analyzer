@@ -28,6 +28,43 @@ services:
     networks:
       - app_network
 
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+  celery:
+    build: .
+    container_name: celery_worker
+    command: celery -A HHanalyzer worker --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - web
+    networks:
+      - app_network
+
+  celery-beat:
+    build: .
+    container_name: celery_beat
+    command: celery -A HHanalyzer beat --loglevel=info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - celery
+    networks:
+      - app_network
+
 networks:
   app_network:
     driver: bridge
