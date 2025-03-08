@@ -122,3 +122,6 @@ CACHES = {
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_BROKER_TRANSPORT_OPTIONS = {"visibility_timeout": 3600}
 CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+
+# Logging format
+FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
