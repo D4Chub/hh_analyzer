@@ -1,15 +1,18 @@
-import time
-from datetime import datetime
-import requests
 import logging
+from datetime import datetime
 
+import requests
+
+from HHanalyzer.settings import FORMAT
 from skills_stats.models import Profession, Vacancy, VacancyKeywords
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 HEADHUNTER_API = "https://api.hh.ru/"
 HEADERS = {"User-Agent": "hh-vacancy-parser"}
 
+
+# TODO: Доработать, улучшить производительность
 def fetch_vacancies(profession: Profession):
     """Получает и сохраняет вакансии в БД для данной профессии"""
     response = requests.get(
@@ -49,6 +52,7 @@ def fetch_vacancies(profession: Profession):
             skill_obj, _ = VacancyKeywords.objects.get_or_create(name=skill_name)
             vacancy_obj.key_skills.add(skill_obj)
 
+
 def main():
     professions = Profession.objects.all()
     if not professions:
@@ -59,7 +63,6 @@ def main():
     for profession in professions:
         logging.info(f"Обрабатываем профессию: {profession.name}")
         fetch_vacancies(profession)
-        time.sleep(0.5)
 
     logging.info("Обновление вакансий завершено")
 
