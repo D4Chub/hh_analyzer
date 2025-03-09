@@ -54,12 +54,8 @@
 ```bash
    http://localhost:8000/api/v1/skills_stats/profession/{id}/skills/
 ```
+Чтобы протестировать, можете перейти по [ссылке](http://localhost:8000/api/v1/skills_stats/profession/1/skills/)
 
-Чтобы протестировать, можете перейти по ссылке:
-
-```bash
-   http://localhost:8000/api/v1/skills_stats/profession/1/skills/
-```
 
 Эндпоинт возвращает список ключевых навыков и их количество, которые встречаются в вакансиях данной профессии.
 Вот как это выглядит для профессии "Python Developer":
