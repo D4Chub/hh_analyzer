@@ -6,44 +6,78 @@ import requests
 from HHanalyzer.settings import FORMAT
 from skills_stats.models import Profession, Vacancy, VacancyKeywords
 
+# Настройки логирования
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 
+# API для получения вакансий
 HEADHUNTER_API = "https://api.hh.ru/"
 HEADERS = {"User-Agent": "hh-vacancy-parser"}
 
+# TODO: Вынести все функции в отдельный класс
+# Функция для получения всех вакансий по профессии
+def fetch_vacancies_for_profession(profession: Profession):
+    logging.info(f"Получаем вакансии для профессии: {profession.name}")
 
-# TODO: Доработать, улучшить производительность
-def fetch_vacancies(profession: Profession):
-    """Получает и сохраняет вакансии в БД для данной профессии"""
+    # Запрос на получение вакансий
     response = requests.get(
         url=f"{HEADHUNTER_API}vacancies",
         params={"text": profession.search_query, "per_page": 20},
         headers=HEADERS
     )
-
     vacancies_data = response.json().get("items", [])
 
-    for vacancy in vacancies_data:
-        vacancy_id = vacancy["id"]
-        vacancy_title = vacancy["name"]
+    if not vacancies_data:
+        logging.warning(f"Нет вакансий для профессии: {profession.name}")
+        return []
 
-        vacancy_response = requests.get(f"{HEADHUNTER_API}vacancies/{vacancy_id}", headers=HEADERS)
-        vacancy_detail = vacancy_response.json()
+    # Сбор всех id вакансий
+    vacancy_ids = [vacancy["id"] for vacancy in vacancies_data]
+    return vacancy_ids
 
-        # Преобразование строки с датой в объект datetime с учетом часового пояса
+
+# Функция для получения подробной информации по каждой вакансии
+def fetch_vacancy_details(vacancy_id):
+    url = f"{HEADHUNTER_API}vacancies/{vacancy_id}"
+    response = requests.get(url, headers=HEADERS)
+    return response.json()
+
+
+# Функция для обработки и сохранения вакансий в БД
+def process_vacancies(profession: Profession, vacancy_ids):
+    existing_keywords = {k.name: k for k in VacancyKeywords.objects.all()}
+
+    # Список для хранения новых вакансий и ключевых навыков
+    new_vacancies = []
+
+    for vacancy_id in vacancy_ids:
+        vacancy_detail = fetch_vacancy_details(vacancy_id)
+
+        vacancy_title = vacancy_detail.get("name")
         published_at_str = vacancy_detail.get("published_at")
-        published_at = datetime.fromisoformat(published_at_str)
+        published_at = datetime.fromisoformat(published_at_str) if published_at_str else None
 
-        # Сохранение вакансии в БД
-        vacancy_obj, created = Vacancy.objects.update_or_create(
-            vacancy_id=vacancy_id,
-            defaults={
-                "profession": profession,
-                "title": vacancy_title,
-                "published_at": published_at,
-                "json_data": vacancy_detail
-            }
-        )
+        # Проверяем, существует ли уже вакансия с таким ID
+        existing_vacancies = Vacancy.objects.filter(vacancy_id=vacancy_id)
+
+        if existing_vacancies.exists():
+
+            # Используем update_or_create для всех найденных записей
+            for existing_vacancy in existing_vacancies:
+                existing_vacancy.title = vacancy_title
+                existing_vacancy.published_at = published_at
+                existing_vacancy.json_data = vacancy_detail
+                existing_vacancy.save()
+
+            vacancy_obj = existing_vacancies.first()
+        else:
+            # Если вакансии с таким ID нет в базе, создаём новую
+            vacancy_obj = Vacancy.objects.create(
+                vacancy_id=vacancy_id,
+                profession=profession,
+                title=vacancy_title,
+                published_at=published_at,
+                json_data=vacancy_detail,
+            )
 
         # Обработка ключевых навыков
         key_skills = vacancy_detail.get("key_skills", [])
@@ -52,17 +86,32 @@ def fetch_vacancies(profession: Profession):
             skill_obj, _ = VacancyKeywords.objects.get_or_create(name=skill_name)
             vacancy_obj.key_skills.add(skill_obj)
 
+        # Добавляем вакансию в список для обновления
+        new_vacancies.append(vacancy_obj)
+
+    return new_vacancies
 
 def main():
     professions = Profession.objects.all()
+
     if not professions:
         logging.warning("Нет профессий в базе данных")
         return
 
     logging.info(f"Начинаем обновление вакансий для {len(professions)} профессий")
+
     for profession in professions:
         logging.info(f"Обрабатываем профессию: {profession.name}")
-        fetch_vacancies(profession)
+
+        # Получаем ID вакансий для данной профессии
+        vacancy_ids = fetch_vacancies_for_profession(profession)
+        if vacancy_ids:
+            # Обрабатываем каждую вакансию
+            new_vacancies = process_vacancies(profession, vacancy_ids)
+
+            # После обработки вакансий, добавляем их в БД
+            Vacancy.objects.bulk_create(new_vacancies, ignore_conflicts=True)
+
 
     logging.info("Обновление вакансий завершено")
 
