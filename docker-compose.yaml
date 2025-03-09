@@ -3,8 +3,6 @@ services:
     container_name: web
     build:
       context: .
-    env_file:
-      - ./.env
     ports:
       - 8000:8000
     volumes:
@@ -58,7 +56,7 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
     volumes:
-      - .:/app
+      - celery_beat_data:/var/run/celerybeat
     depends_on:
       - redis
       - celery
@@ -71,3 +69,4 @@ networks:
 
 volumes:
   postgres_data:
+  celery_beat_data:
