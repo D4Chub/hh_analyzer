@@ -15,7 +15,6 @@ def fetch_vacancies_task():
     professions = Profession.objects.all()
     for profession in professions:
         logging.info(f"Обрабатываем профессию: {profession.name}")
-        fetch_vacancies_for_profession(profession)
         process_vacancies(profession, fetch_vacancies_for_profession(profession))
 
     logging.info("Обновление вакансий завершено")
