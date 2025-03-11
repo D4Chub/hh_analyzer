@@ -7,10 +7,7 @@ from skills_stats.models import VacancyKeywords
 
 class KeySkillsCountView(APIView):
     def get(self, request, profession_id):
-        return Response(
-            VacancyKeywords.objects
-            .filter(vacancies__profession_id=profession_id)
-            .annotate(count=Count('vacancies'))
-            .order_by('-count')
-            .values('id', 'name', 'count')
-        )
+        key_skills = VacancyKeywords.objects.filter(vacancies__profession_id=profession_id).annotate(
+            count=Count('vacancies')).order_by('-count').values('id', 'name', 'count')
+
+        return Response(key_skills)

@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 HEADHUNTER_API = "https://api.hh.ru/"
 HEADERS = {"User-Agent": "hh-vacancy-parser"}
 
+
 # TODO: Вынести все функции в отдельный класс
 # Функция для получения всех вакансий по профессии
 def fetch_vacancies_for_profession(profession: Profession):
@@ -90,31 +91,3 @@ def process_vacancies(profession: Profession, vacancy_ids):
         new_vacancies.append(vacancy_obj)
 
     return new_vacancies
-
-def main():
-    professions = Profession.objects.all()
-
-    if not professions:
-        logging.warning("Нет профессий в базе данных")
-        return
-
-    logging.info(f"Начинаем обновление вакансий для {len(professions)} профессий")
-
-    for profession in professions:
-        logging.info(f"Обрабатываем профессию: {profession.name}")
-
-        # Получаем ID вакансий для данной профессии
-        vacancy_ids = fetch_vacancies_for_profession(profession)
-        if vacancy_ids:
-            # Обрабатываем каждую вакансию
-            new_vacancies = process_vacancies(profession, vacancy_ids)
-
-            # После обработки вакансий, добавляем их в БД
-            Vacancy.objects.bulk_create(new_vacancies, ignore_conflicts=True)
-
-
-    logging.info("Обновление вакансий завершено")
-
-
-if __name__ == "__main__":
-    main()
