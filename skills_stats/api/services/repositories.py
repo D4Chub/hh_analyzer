@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import List, Optional, Any
+from typing import Optional, Any
+from django.db.models.query import QuerySet
 
 from skills_stats.models import Vacancy, VacancyKeywords
 
 
 class VacancyRepositories:
-    def get_all(self) -> List[Vacancy]:
+    def get_all(self) -> QuerySet:
         return Vacancy.objects.all()
 
     def get_by_id(self, vacancy_id) -> Optional[Vacancy]:
@@ -29,7 +30,7 @@ class VacancyRepositories:
 
 
 class VacancyKeywordsRepositories:
-    def get_all(self) -> List[VacancyKeywords]:
+    def get_all(self) -> QuerySet:
         return VacancyKeywords.objects.all()
 
     def get_or_create(self, name: str) -> VacancyKeywords:
