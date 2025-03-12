@@ -17,10 +17,18 @@ HEADERS = {"User-Agent": "hh-vacancy-parser"}
 
 
 class HHParser:
-    def __init__(self, profession: Profession) -> None:
-        self.profession = profession
+    def __init__(
+        self,
+        profession: Profession,
+        vacancy: VacancyRepositories,
+        vacancy_keywords: VacancyKeywordsRepositories
+    ) -> None:
 
-    def _response(self, vacancy_id: int = None, search_query: str = None) -> requests.Response:
+        self.profession = profession
+        self.vacancy = vacancy
+        self.vacancy_keywords = vacancy_keywords
+
+    def _response(self, vacancy_id: int = None, search_query: str = None) -> dict:
         url: str = f"{HEADHUNTER_API}vacancies/{vacancy_id}" if vacancy_id else f"{HEADHUNTER_API}vacancy"
         params: dict | None = {"text": search_query, "per_page": 20} if search_query else None
 
@@ -66,7 +74,7 @@ class HHParser:
             key_skills = vacancy_detail.get("key_skills", [])
 
             try:
-                vacancy = VacancyRepositories.create(
+                vacancy = self.vacancy.create(
                     vacancy_id=vacancy_id,
                     profession=self.profession,
                     title=vacancy_title,
@@ -77,11 +85,11 @@ class HHParser:
                 continue
 
             # Получаем существующие в бд навыки
-            existing_keywords = {k.name: k for k in VacancyKeywordsRepositories.get_all()}
+            existing_keywords = {k.name: k for k in self.vacancy_keywords.get_all()}
             for skill in key_skills:
                 skill_name = skill["name"]
                 if skill_name not in existing_keywords:
                     # Если навыка нет, создаем его и добавляем в словарик
-                    existing_keywords[skill_name], _ = VacancyKeywordsRepositories.get_or_create(name=skill_name)
+                    existing_keywords[skill_name], _ = self.vacancy_keywords.get_or_create(name=skill_name)
 
                 vacancy.key_skills.add(existing_keywords[skill_name])
