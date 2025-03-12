@@ -1,17 +1,24 @@
+from datetime import datetime
+from typing import List, Optional, Any
+
 from skills_stats.models import Vacancy, VacancyKeywords
 
 
 class VacancyRepositories:
-    @staticmethod
-    def get_all():
+    def get_all(self) -> List[Vacancy]:
         return Vacancy.objects.all()
 
-    @staticmethod
-    def get_by_id(vacancy_id):
-        return Vacancy.objects.filter(id=vacancy_id)
+    def get_by_id(self, vacancy_id) -> Optional[Vacancy]:
+        return Vacancy.objects.filter(id=vacancy_id).first()
 
-    @staticmethod
-    def create(vacancy_id, profession, title, published_at, json_data):
+    def create(
+            self,
+            vacancy_id: int,
+            profession: Any,
+            title: str,
+            published_at: datetime,
+            json_data: dict
+    ) -> Vacancy:
         return Vacancy.objects.create(
             vacancy_id=vacancy_id,
             profession=profession,
@@ -22,10 +29,9 @@ class VacancyRepositories:
 
 
 class VacancyKeywordsRepositories:
-    @staticmethod
-    def get_all():
+    def get_all(self) -> List[VacancyKeywords]:
         return VacancyKeywords.objects.all()
 
-    @staticmethod
-    def get_or_create(name):
-        return VacancyKeywords.objects.get_or_create(name=name)
+    def get_or_create(self, name: str) -> VacancyKeywords:
+        keyword, _ = VacancyKeywords.objects.get_or_create(name=name)
+        return keyword
